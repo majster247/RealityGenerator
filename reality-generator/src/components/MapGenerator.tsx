@@ -1,59 +1,58 @@
-import React, { useState, useEffect, useRef } from 'react';
-import Cell from './Cell';
-import ReactDOM from 'react-dom';
+import React, { useState } from "react";
+import './MapGenerator.css'
+import { useForm } from 'react-hook-form';
+import GenerateCells from './Cell';
 
-interface MapGeneratorProps {
-  cellCount: number;
-  allowedBiomes: string[];
-  maxSize: number;
+interface FormValues {
+  cellAmount: number;
+  city: boolean;
+  forest: boolean;
+  water: boolean;
+  mountains: boolean;
+  sand: boolean;
+}
+function MapMatch(map: string[][]){
+  
+  
 }
 
-const MapGenerator: React.FC<MapGeneratorProps> = ({ cellCount, allowedBiomes, maxSize }) => {
-  const [map, setMap] = useState<string[][]>([]);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+export default function MapGeneratorForm() {
+  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>();
+  const [isGenerating, setGenerating] = useState<boolean>(false);
 
-  useEffect(() => {
-    generateMap();
-    drawMap();
-  }, [cellCount, allowedBiomes, maxSize]);
+  const onSubmit = async (data: FormValues) => {
+    // Set the loading state to true
+    setGenerating(true);
 
-  const generateMap = () => {
-    const newMap: string[][] = Array.from({ length: maxSize }, () => Array(maxSize).fill(''));
-  
-    for (let i = 0; i < cellCount; i++) {
-      const x = Math.floor(Math.random() * maxSize);
-      const y = Math.floor(Math.random() * maxSize);
-      const randomBiome = allowedBiomes[Math.floor(Math.random() * allowedBiomes.length)];
-  
-      newMap[x][y] = randomBiome;
-    }
+    // Simulate an asynchronous operation (e.g., API call, cell generation)
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-    setMap(newMap);
+    // Perform the cell generation logic
+    MapMatch(GenerateCells(data));
+
+    // Set the loading state back to false
+    setGenerating(false);
   };
 
-  const drawMap = () => {
-    if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-  
-      if (ctx) {
-        ctx.clearRect(0, 0, maxSize * 40, maxSize * 40); // Clear the canvas
-  
-        map.forEach((row, rowIndex) => {
-          row.forEach((biomes, colIndex) => {
-            const cellX = colIndex * 40; // Assuming each cell has a width of 40
-            const cellY = rowIndex * 40; // Assuming each cell has a height of 40
-  
-            // Wrap biomes in an array
-            const cell = <Cell key={`${rowIndex}-${colIndex}`} biomes={[biomes]} x={cellX} y={cellY} />;
-            ReactDOM.render(cell, canvasRef.current); // Render the Cell component
-          });
-        });
-      }
-    }
-  };
-  
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <ol>
+        <label>Number of cells to generate:</label>
+        <input type="text" placeholder="cellAmount" {...register("cellAmount", { required: true, pattern: /^[0-9]*$/ })} />
+        
+        <p>What biomes you want to generate</p>
+        
+        <ul><input type="checkbox" {...register("city")} /> City</ul>
+        <ul><input type="checkbox" {...register("forest")} /> Forest</ul>
+        <ul><input type="checkbox" {...register("water")} /> Water</ul>
+        <ul><input type="checkbox" {...register("mountains")} /> Mountains</ul>
+        <ul><input type="checkbox" {...register("sand")} /> Sand</ul>
+      </ol>
 
-  return <canvas ref={canvasRef} width={maxSize * 40} height={maxSize * 40}></canvas>;
-};
-
-export default MapGenerator;
+      {/* Display "Generating..." text while the generation is in progress */}
+      <button type="submit" disabled={isGenerating}>
+        {isGenerating ? "Generating..." : "Generate"}
+      </button>
+    </form>
+  );
+}

@@ -1,67 +1,77 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 
-interface CellProps {
-  biomes: string[];
-  x: number;
-  y: number;
+interface FormValues {
+  cellAmount: number;
+  city: boolean;
+  forest: boolean;
+  water: boolean;
+  mountains: boolean;
+  sand: boolean;
 }
 
-const Cell: React.FC<CellProps> = ({ biomes, x, y }) => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+const GenerateCells: React.FC<FormValues> = (formData) => {
+  const { cellAmount, city, forest, water, mountains, sand } = formData;
 
-  useEffect(() => {
-    if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
+  // Create a list of available biomes based on form data
+  const availableBiomes: string[] = [];
+  if (city) availableBiomes.push('C');
+  if (forest) availableBiomes.push('F');
+  if (water) availableBiomes.push('W');
+  if (mountains) availableBiomes.push('M');
+  if (sand) availableBiomes.push('S');
 
-      if (ctx) {
-        drawHexagon(ctx, x, y);
-        fillBiomes(ctx, biomes, x, y);
+  const getRandomBiomes = () => {
+    const firstBiome = availableBiomes[Math.floor(Math.random() * availableBiomes.length)];
+    const secondBiome = availableBiomes.find(b => b !== firstBiome) || firstBiome;
+    return [firstBiome, secondBiome];
+  };
+
+  // Function to generate a cell with exactly two different biomes without breaking the same biome
+  const generateCell = () => {
+    const cell: string[] = [];
+    const availableBiomesForGenerate: string[] = [];
+
+    // Generate 2 biomes
+    for (let j = 0; j < 2; j++) {
+      const [biome1, biome2] = getRandomBiomes();
+      availableBiomesForGenerate.push(biome1);
+      availableBiomesForGenerate.push(biome2);
+    }
+
+    // Generate the remaining 4 biomes
+    for (let i = 0; i < 6; i++) {
+      // Use only biome[i-1] if it breaks the rule
+      if (
+        i >= 2 &&
+        ((cell[i - 2] === availableBiomesForGenerate[1] && cell[i - 1] === availableBiomesForGenerate[0]) ||
+          (cell[i - 2] === availableBiomesForGenerate[0] && cell[i - 1] === availableBiomesForGenerate[1]))
+      ) {
+        cell.push(cell[i - 1]);
+      } else {
+        cell.push(availableBiomesForGenerate[Math.floor(Math.random() * (1 - 0 + 1)) + 0]);
       }
     }
-  }, [biomes, x, y]);
 
-  const drawHexagon = (ctx: CanvasRenderingContext2D, cellX: number, cellY: number) => {
-    const size = 20; // Set your desired size
-    const centerX = cellX + size;
-    const centerY = cellY + size;
-
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
-      const angle = (i * Math.PI) / 3;
-      const x = centerX + size * Math.cos(angle);
-      const y = centerY + size * Math.sin(angle);
-
-      ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.stroke();
+    return cell;
   };
 
-  const fillBiomes = (ctx: CanvasRenderingContext2D, biomes: string[], cellX: number, cellY: number) => {
-    const size = 20; // Set your desired size
-    const centerX = cellX + size;
-    const centerY = cellY + size;
+  // Generate and store cells in a 2D array
+  const map: string[][] = [];
+  for (let i = 0; i < cellAmount; i++) {
+    const cell = generateCell();
+    console.log(cell);
+    map.push(cell); // Push the entire cell array to the map
+  }
 
-    const biomeColors: { [key: string]: string } = {
-      water: 'blue',
-      city: 'grey',
-      forest: 'green',
-      orchard: 'orange',
-      field: 'yellow',
-      mountains: 'brown',
-    };
 
-    biomes.forEach((biome, index) => {
-      const angle = ((index % 6) * Math.PI) / 3;
-      const x = centerX + size * Math.cos(angle);
-      const y = centerY + size * Math.sin(angle);
+  // Log the generated map
+  console.log('Generated Map:', map);
 
-      ctx.fillStyle = biomeColors[biome] || 'white';
-      ctx.fill();
-    });
-  };
-
-  return <canvas ref={canvasRef} width={40} height={40} style={{ position: 'absolute' }}></canvas>;
+  return (
+    <div>
+     
+    </div>
+  );
 };
 
-export default Cell;
+export default GenerateCells;
